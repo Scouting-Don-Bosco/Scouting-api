@@ -6,6 +6,81 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Member {
+  id             String          @id @default(cuid())
+  lastName       String          @db.VarChar(50)
+  firstName      String          @db.VarChar(50)
+  birthDate      DateTime
+  address        String
+  zipcode        String
+  city           String
+  memberSince    DateTime
+  chil_lidnumber Int
+  contactOptions ContactInfo[]
+  memberInGroups MemberInGroup[]
+}
+
+model ContactInfo {
+  id       String      @id @default(cuid())
+  type     ContactType
+  value    String      @db.VarChar(50)
+  memberId String
+  person   Member      @relation(fields: [memberId], references: [id])
+}
+
+enum ContactType {
+  EMAIL
+  PHONE
+}
+
+model Group {
+  id      String          @id @default(cuid())
+  name    String          @db.VarChar(50)
+  Members MemberInGroup[]
+}
+
+model MemberInGroup {
+  id          String     @id @default(cuid())
+  memberId    String
+  groupId     String
+  memberSince DateTime
+  member      Member     @relation(fields: [memberId], references: [id])
+  group       Group      @relation(fields: [groupId], references: [id])
+  role        MemberRole
+}
+
+enum MemberRole {
+  MEMBER
+  LEADER
+  TEAM_LEADER
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  username     String
+  roles        UserRole[]    @default([USER])
+  newsArticles NewsArticle[]
+}
+
+enum UserRole {
+  USER
+  BOARDMEMBER
+  WEBMASTER
+  LEADER
+  SOCIALMANAGER
+}
+
+model NewsArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  publishedAt DateTime
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
 }
