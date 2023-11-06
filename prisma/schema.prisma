@@ -74,6 +74,7 @@ enum UserRole {
   WEBMASTER
   LEADER
   SOCIALMANAGER
+  DATAMANAGER
 }
 
 model NewsArticle {
