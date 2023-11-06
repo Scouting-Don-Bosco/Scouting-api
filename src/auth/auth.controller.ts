@@ -1,11 +1,20 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
-import { LoginDto } from './dto/login.dto';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+} from "@nestjs/common";
+import { AuthService } from "./auth.service";
+import { UsersService } from "../users/users.service";
+import { LoginDto } from "./dto/login.dto";
+import { ApiBody, ApiTags } from "@nestjs/swagger";
+import { RefreshTokensDto } from "./dto/refreshtokens.dto";
 
-@ApiTags('auth')
-@Controller('auth')
+@ApiTags("auth")
+@Controller("auth")
 export class AuthController {
   constructor(
     private readonly usersService: UsersService,
@@ -13,14 +22,14 @@ export class AuthController {
   ) {}
 
   @ApiBody({ type: LoginDto })
-  @Post('login')
+  @Post("login")
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginArgs: LoginDto) {
     const user = await this.usersService.findUserByEmail(loginArgs.email);
     if (!user) {
       return {
         statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'Incorrect email',
+        message: "Incorrect email",
       };
     }
 
@@ -32,10 +41,22 @@ export class AuthController {
     if (!match) {
       return {
         statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'Incorrect password',
+        message: "Incorrect password",
       };
     }
 
     return this.authService.generateTokensForUser(user);
+  }
+
+  @Patch(":id")
+  @HttpCode(HttpStatus.OK)
+  async refreshTokens(@Body() refreshTokensDto: RefreshTokensDto) {
+    return this.authService.refreshTokens(refreshTokensDto.refreshToken);
+  }
+
+  @Get("roles")
+  @HttpCode(HttpStatus.OK)
+  async getRoles() {
+    return (await this.usersService.findAll())[0].roles;
   }
 }
