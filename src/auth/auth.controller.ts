@@ -12,6 +12,7 @@ import { UsersService } from "../users/users.service";
 import { LoginDto } from "./dto/login.dto";
 import { ApiBody, ApiTags } from "@nestjs/swagger";
 import { RefreshTokensDto } from "./dto/refreshtokens.dto";
+import { UserRole } from "@prisma/client";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -45,10 +46,10 @@ export class AuthController {
       };
     }
 
-    return this.authService.generateTokensForUser(user);
+    return await this.authService.generateTokensForUser(user);
   }
 
-  @Patch(":id")
+  @Patch("token/refresh")
   @HttpCode(HttpStatus.OK)
   async refreshTokens(@Body() refreshTokensDto: RefreshTokensDto) {
     return this.authService.refreshTokens(refreshTokensDto.refreshToken);
@@ -57,6 +58,6 @@ export class AuthController {
   @Get("roles")
   @HttpCode(HttpStatus.OK)
   async getRoles() {
-    return (await this.usersService.findAll())[0].roles;
+    return UserRole;
   }
 }
