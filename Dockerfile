@@ -23,6 +23,7 @@ WORKDIR /app
 EXPOSE 8080
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder package*.json ./
+# Add the package.json for usage of scripts
+COPY --from=builder /app/package*.json ./
 
 CMD ["npm", "run", "start:prod"]
