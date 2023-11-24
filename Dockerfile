@@ -2,13 +2,14 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-EXPOSE 8080
-
 COPY package*.json ./
+COPY prisma ./prisma/
+COPY .env* ./
+COPY tsconfig.json ./
 
 RUN npm install
 
-RUN npx prisma generate
+RUN npm run db:migrate
 
 COPY . .
 
@@ -19,6 +20,7 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 # run the built nestjs application
+EXPOSE 8080
 
 COPY --from=builder /app/dist ./dist
 
