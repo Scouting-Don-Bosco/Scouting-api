@@ -19,6 +19,13 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext) {
+    const roles =
+      this.reflector.get(Roles, context.getHandler()) ||
+      this.reflector.get(Roles, context.getClass());
+    const adminOnly =
+      this.reflector.get(AdminOnly, context.getHandler()) ||
+      this.reflector.get(AdminOnly, context.getClass());
+
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromRequest(request);
     if (!token) {
@@ -32,13 +39,6 @@ export class AuthGuard implements CanActivate {
     } catch (e) {
       throw new UnauthorizedException();
     }
-
-    const roles =
-      this.reflector.get(Roles, context.getHandler()) ||
-      this.reflector.get(Roles, context.getClass());
-    const adminOnly =
-      this.reflector.get(AdminOnly, context.getHandler()) ||
-      this.reflector.get(AdminOnly, context.getClass());
 
     if (!roles && !adminOnly) {
       return true;
