@@ -1,6 +1,6 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine as development
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -15,15 +15,17 @@ COPY . .
 
 RUN npm run build
 
-FROM node:18-alpine AS runner
+FROM node:18-alpine as production
 
-WORKDIR /app
+COPY package*.json ./
+COPY prisma ./prisma/
 
-# run the built nestjs application
-EXPOSE 8080
+RUN npm install 
+RUN npm run db:migrate
 
-COPY --from=builder /app/dist ./dist
+COPY . .
+
+COPY --from=development /usr/src/app/dist ./dist
 # Add the package.json for usage of scripts
-COPY --from=builder /app/package*.json ./
 
 CMD ["npm", "run", "start:prod"]
