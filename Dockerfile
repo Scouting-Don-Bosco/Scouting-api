@@ -18,6 +18,7 @@ RUN npm run build
 FROM node:18-alpine as production
 
 COPY package*.json ./
+COPY .env* ./
 COPY prisma ./prisma/
 
 RUN npm install 
