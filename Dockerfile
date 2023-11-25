@@ -25,10 +25,9 @@ COPY prisma ./prisma/
 
 RUN npm install 
 RUN npm run db:migrate
-
 COPY . .
 
-COPY --from=development /usr/src/app/dist ./dist
+RUN npm run build
 # Add the package.json for usage of scripts
 
-CMD ["node", "/dist/src/app.js"]
+CMD ["npm", "run", "start"]
