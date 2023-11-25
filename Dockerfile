@@ -17,6 +17,8 @@ RUN npm run build
 
 FROM node:18-alpine as production
 
+WORKDIR /usr/src/app
+
 COPY package*.json ./
 COPY .env* ./
 COPY prisma ./prisma/
@@ -29,4 +31,4 @@ COPY . .
 COPY --from=development /usr/src/app/dist ./dist
 # Add the package.json for usage of scripts
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "/dist/src/app.js"]
