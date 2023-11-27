@@ -3,6 +3,7 @@ import { AppModule } from "./app.module";
 import {
   DocumentBuilder,
   SwaggerCustomOptions,
+  SwaggerDocumentOptions,
   SwaggerModule,
 } from "@nestjs/swagger";
 import { OperationSorter, TagSorter } from "./utils/swagger.sort";
@@ -16,9 +17,12 @@ async function bootstrap() {
     .setVersion("1.0")
     .addBearerAuth()
     .build();
+
+  const customSwaggerDocumentOptions: SwaggerDocumentOptions = {
+    ignoreGlobalPrefix: false,
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
   const customOptions: SwaggerCustomOptions = {
-    url: "http://localhost:8080/api/swagger",
-    
     swaggerOptions: {
       tagsSorter: TagSorter,
       operationsSorter: OperationSorter,
@@ -26,11 +30,15 @@ async function bootstrap() {
       tryItOutEnabled: true,
     },
   };
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+    customSwaggerDocumentOptions,
+  );
   SwaggerModule.setup("swagger", app, document, customOptions);
 
   app.enableCors();
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix("api");
   await app.listen(8080);
 }
 bootstrap();
