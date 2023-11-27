@@ -21,6 +21,10 @@ async function bootstrap() {
     .setBasePath("api")
     .build();
 
+  const documentOptions: SwaggerDocumentOptions = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+
   const customOptions: SwaggerCustomOptions = {
     swaggerOptions: {
       tagsSorter: TagSorter,
@@ -29,7 +33,11 @@ async function bootstrap() {
       tryItOutEnabled: true,
     },
   };
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+    documentOptions,
+  );
   SwaggerModule.setup("api/swagger", app, document, customOptions);
 
   await app.listen(8080);
