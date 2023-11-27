@@ -10,18 +10,17 @@ import { OperationSorter, TagSorter } from "./utils/swagger.sort";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix("api");
+  app.enableCors();
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle("Scouting API")
     .setDescription("The Scouting API description")
     .setVersion("1.0")
     .addBearerAuth()
+    .setBasePath("api")
     .build();
 
-  const customSwaggerDocumentOptions: SwaggerDocumentOptions = {
-    ignoreGlobalPrefix: false,
-    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
-  };
   const customOptions: SwaggerCustomOptions = {
     swaggerOptions: {
       tagsSorter: TagSorter,
@@ -30,15 +29,9 @@ async function bootstrap() {
       tryItOutEnabled: true,
     },
   };
-  const document = SwaggerModule.createDocument(
-    app,
-    swaggerConfig,
-    customSwaggerDocumentOptions,
-  );
-  SwaggerModule.setup("swagger", app, document, customOptions);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup("api/swagger", app, document, customOptions);
 
-  app.enableCors();
-  app.setGlobalPrefix("api");
   await app.listen(8080);
 }
 bootstrap();
