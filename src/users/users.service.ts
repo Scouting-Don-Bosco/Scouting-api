@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { PrismaService } from "src/prisma/prisma.service";
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
 @Injectable()
 export class UsersService {
@@ -45,13 +45,12 @@ export class UsersService {
       where: { id: id },
       update: {
         email: updateUserDto.email ?? undefined,
-        password: updateUserDto.password ?? undefined,
         username: updateUserDto.username ?? undefined,
         roles: updateUserDto.roles ?? undefined,
       },
       create: {
         email: updateUserDto.email,
-        password: updateUserDto.password,
+        password: bcrypt.hashSync("changeme", 10),
         username: updateUserDto.username,
         roles: updateUserDto.roles,
       },

@@ -11,13 +11,14 @@ import {
 import { GroupsService } from "./groups.service";
 import { CreateGroupDto } from "./dto/create-group.dto";
 import { UpdateGroupDto } from "./dto/update-group.dto";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthGuard } from "src/auth/auth.guard";
 import { UserRole } from "@prisma/client";
 import { Roles } from "src/auth/decorators/roles.decorator";
 
 @Controller("groups")
 @ApiTags("groups")
+@ApiBearerAuth()
 @UseGuards(AuthGuard)
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
@@ -51,4 +52,3 @@ export class GroupsController {
     return await this.groupsService.remove(id);
   }
 }
-

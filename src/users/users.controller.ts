@@ -13,12 +13,13 @@ import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthGuard } from "src/auth/auth.guard";
-import { AdminOnly } from "src/auth/decorators/admin.decorator";
+import { UserRole } from "@prisma/client";
+import { Roles } from "src/auth/decorators/roles.decorator";
 
 @ApiTags("users")
 @Controller("users")
 @UseGuards(AuthGuard)
-@AdminOnly()
+@Roles([UserRole.DATAMANAGER])
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -29,23 +30,28 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    const users = await this.usersService.findAll();
+    users.forEach((user) => delete user.password);
+    return users;
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.usersService.findOne(id);
+  async findOne(@Param("id") id: string) {
+    const user = await this.usersService.findOne(id);
+    delete user.password;
+    return user;
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  async update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
+    const user = await this.usersService.update(id, updateUserDto);
+    delete user.password;
+    return user;
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
+  async remove(@Param("id") id: string) {
     return this.usersService.remove(id);
   }
 }
-
