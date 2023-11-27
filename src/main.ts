@@ -29,6 +29,7 @@ async function bootstrap() {
   SwaggerModule.setup("swagger", app, document, customOptions);
 
   app.enableCors();
+  app.setGlobalPrefix('api');
   await app.listen(8080);
 }
 bootstrap();
