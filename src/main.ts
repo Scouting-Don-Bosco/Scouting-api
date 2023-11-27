@@ -17,7 +17,8 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const customOptions: SwaggerCustomOptions = {
-    url: "http://localhost:8080/swagger",
+    url: "http://localhost:8080/api/swagger",
+    
     swaggerOptions: {
       tagsSorter: TagSorter,
       operationsSorter: OperationSorter,
