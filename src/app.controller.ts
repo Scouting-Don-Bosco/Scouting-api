@@ -1,9 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
-import { PrismaService } from './prisma/prisma.service';
-import { ApiTags } from '@nestjs/swagger';
+import { Controller, Get } from "@nestjs/common";
+import { AppService } from "./app.service";
+import { PrismaService } from "./prisma/prisma.service";
+import { ApiTags } from "@nestjs/swagger";
 
-@ApiTags('index')
+@ApiTags("index")
 @Controller()
 export class AppController {
   constructor(
@@ -13,6 +13,6 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    return 'Scouting API';
+    return "Scouting API";
   }
 }

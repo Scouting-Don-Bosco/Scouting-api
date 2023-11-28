@@ -14,7 +14,8 @@ async function bootstrap() {
   app.enableCors();
 
   const swaggerConfig = new DocumentBuilder()
-    .addServer("http://213.126.73.128")
+    .addServer("http://213.136.73.128")
+    .addServer("http://localhost:8080")
     .setBasePath("api")
     .setTitle("Scouting API")
     .setDescription("The Scouting API description")
