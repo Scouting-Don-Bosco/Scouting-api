@@ -7,51 +7,99 @@ import {
   Param,
   Delete,
   UseGuards,
+  Res,
+  HttpStatus,
 } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { AuthGuard } from "src/auth/auth.guard";
-import { UserRole } from "@prisma/client";
-import { Roles } from "src/auth/decorators/roles.decorator";
+import { User } from "@prisma/client";
+import { Response } from "express";
+import { AdminOnly } from "src/auth/decorators/admin.decorator";
 
 @ApiTags("users")
 @Controller("users")
 @UseGuards(AuthGuard)
-@Roles([UserRole.DATAMANAGER])
-@ApiBearerAuth()
+@AdminOnly()
+@ApiBearerAuth("access_token")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @ApiCreatedResponse({ description: "User created" })
+  @ApiBadRequestResponse({ description: "Malformed Request content" })
+  @ApiInternalServerErrorResponse({
+    description: "Internal server error from prisma",
+  })
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @Res() response: Response,
+  ) {
+    try {
+      const result = await this.usersService.create(createUserDto);
+      if (result)
+        response
+          .status(HttpStatus.CREATED)
+          .send({ location: `/users/${result.id}` });
+      else response.status(HttpStatus.BAD_REQUEST).send("Bad request!");
+    } catch (error) {
+      response.status(HttpStatus.INTERNAL_SERVER_ERROR).send(error.message);
+    }
   }
 
   @Get()
-  async findAll() {
+  @ApiOkResponse({ description: "List of all found users" })
+  async findAllUsers(): Promise<Omit<User, "password">[]> {
     const users = await this.usersService.findAll();
     users.forEach((user) => delete user.password);
     return users;
   }
 
   @Get(":id")
-  async findOne(@Param("id") id: string) {
+  @ApiOkResponse({ description: "User found" })
+  @ApiNotFoundResponse({ description: "User not found" })
+  async findUserById(@Param("id") id: string, @Res() response: Response) {
     const user = await this.usersService.findOne(id);
-    delete user.password;
-    return user;
+    if (user) {
+      delete user.password;
+      return user;
+    } else response.status(HttpStatus.NOT_FOUND).send("User not found!");
   }
 
   @Patch(":id")
-  async update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
-    const user = await this.usersService.update(id, updateUserDto);
-    delete user.password;
-    return user;
+  @ApiNoContentResponse({ description: "User updated" })
+  @ApiNotFoundResponse({ description: "User not found" })
+  async updateUser(
+    @Param("id") id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Res() response: Response,
+  ) {
+    const result = await this.usersService.update(id, updateUserDto);
+    if (result) {
+      response.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      response.status(HttpStatus.NOT_FOUND).send();
+    }
   }
 
   @Delete(":id")
-  async remove(@Param("id") id: string) {
-    return this.usersService.remove(id);
+  @ApiNoContentResponse({ description: "User deleted" })
+  @ApiNotFoundResponse({ description: "User not found" })
+  async removeUser(@Param("id") id: string, @Res() response: Response) {
+    const result = await this.usersService.remove(id);
+    if (result) {
+      response.status(HttpStatus.NO_CONTENT).send();
+    } else response.status(HttpStatus.NOT_FOUND).send();
   }
 }

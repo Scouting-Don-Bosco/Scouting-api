@@ -14,11 +14,19 @@ async function bootstrap() {
   app.enableCors();
 
   const swaggerConfig = new DocumentBuilder()
+    .addServer("http://213.126.73.128")
+    .setBasePath("api")
     .setTitle("Scouting API")
     .setDescription("The Scouting API description")
     .setVersion("1.0")
-    .addBearerAuth()
-    .setBasePath("api")
+    .addBearerAuth(
+      {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+      "access_token",
+    )
     .build();
 
   const documentOptions: SwaggerDocumentOptions = {
@@ -26,6 +34,7 @@ async function bootstrap() {
   };
 
   const customOptions: SwaggerCustomOptions = {
+    swaggerUrl: "api/swagger-json",
     swaggerOptions: {
       tagsSorter: TagSorter,
       operationsSorter: OperationSorter,

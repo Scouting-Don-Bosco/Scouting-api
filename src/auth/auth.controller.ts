@@ -6,13 +6,19 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Res,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { UsersService } from "../users/users.service";
 import { LoginDto } from "./dto/login.dto";
-import { ApiBody, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBody,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from "@nestjs/swagger";
 import { RefreshTokensDto } from "./dto/refreshtokens.dto";
-import { UserRole } from "@prisma/client";
+import { Response } from "express";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -23,15 +29,18 @@ export class AuthController {
   ) {}
 
   @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ description: "Login successful" })
+  @ApiUnauthorizedResponse({ description: "Incorrect email or password" })
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginArgs: LoginDto) {
+  async login(@Body() loginArgs: LoginDto, @Res() response: Response) {
     const user = await this.usersService.findUserByEmail(loginArgs.email);
     if (!user) {
-      return {
+      response.status(HttpStatus.UNAUTHORIZED).send({
         statusCode: HttpStatus.UNAUTHORIZED,
         message: "Incorrect email",
-      };
+      });
+      return response;
     }
 
     const match = this.authService.comparePasswordsForLogin(
@@ -40,24 +49,23 @@ export class AuthController {
     );
 
     if (!match) {
-      return {
+      response.status(HttpStatus.UNAUTHORIZED).send({
         statusCode: HttpStatus.UNAUTHORIZED,
         message: "Incorrect password",
-      };
+      });
+      return;
     }
 
-    return await this.authService.generateTokensForUser(user);
+    response
+      .status(HttpStatus.OK)
+      .send(await this.authService.generateTokensForUser(user));
   }
 
   @Patch("token/refresh")
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: "Tokens refreshed" })
+  @ApiUnauthorizedResponse({ description: "Invalid refresh token" })
   async refreshTokens(@Body() refreshTokensDto: RefreshTokensDto) {
     return this.authService.refreshTokens(refreshTokensDto.refreshToken);
-  }
-
-  @Get("roles")
-  @HttpCode(HttpStatus.OK)
-  async getRoles() {
-    return UserRole;
   }
 }

@@ -1,26 +1,76 @@
-import { Injectable } from '@nestjs/common';
-import { CreateMemberDto } from './dto/create-member.dto';
-import { UpdateMemberDto } from './dto/update-member.dto';
+import { Injectable } from "@nestjs/common";
+import { CreateMemberDto } from "./dto/create-member.dto";
+import { UpdateMemberDto } from "./dto/update-member.dto";
+import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class MembersService {
-  create(createMemberDto: CreateMemberDto) {
-    return 'This action adds a new member';
+  constructor(private prismaService: PrismaService) {}
+  async create(createMemberDto: CreateMemberDto) {
+    return await this.prismaService.member.create({
+      data: {
+        firstName: createMemberDto.firstName,
+        lastName: createMemberDto.lastName,
+        birthDate: createMemberDto.birthDate,
+        address: createMemberDto.address,
+        zipcode: createMemberDto.zipcode,
+        city: createMemberDto.city,
+        memberSince: createMemberDto.memberSince,
+        chil_lidnumber: createMemberDto.chil_lidnumber,
+        contactOptions: {
+          create: createMemberDto.contactOptions,
+        },
+        memberInGroups: {
+          create: createMemberDto.memberInGroups,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all members`;
+  async findAll() {
+    return await this.prismaService.member.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} member`;
+  async findOne(id: string) {
+    return await this.prismaService.member.findUnique({
+      where: {
+        id: id,
+      },
+    });
   }
 
-  update(id: number, updateMemberDto: UpdateMemberDto) {
-    return `This action updates a #${id} member`;
+  async update(id: string, updateMemberDto: UpdateMemberDto) {
+    return await this.prismaService.member.update({
+      where: {
+        id: id,
+      },
+      data: {
+        firstName: updateMemberDto.firstName,
+        lastName: updateMemberDto.lastName,
+        birthDate: updateMemberDto.birthDate,
+        address: updateMemberDto.address,
+        zipcode: updateMemberDto.zipcode,
+        city: updateMemberDto.city,
+        memberSince: updateMemberDto.memberSince,
+        chil_lidnumber: updateMemberDto.chil_lidnumber,
+        contactOptions: {
+          connect: updateMemberDto.contactOptions,
+        },
+        memberInGroups: {
+          create: updateMemberDto.memberInGroups,
+        },
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} member`;
+  async remove(id: string) {
+    return await this.prismaService.member.delete({
+      where: {
+        id: id,
+      },
+    });
   }
 }

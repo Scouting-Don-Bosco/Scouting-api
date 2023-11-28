@@ -7,48 +7,78 @@ import {
   Param,
   Delete,
   UseGuards,
+  Res,
+  HttpStatus,
 } from "@nestjs/common";
 import { GroupsService } from "./groups.service";
 import { CreateGroupDto } from "./dto/create-group.dto";
 import { UpdateGroupDto } from "./dto/update-group.dto";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from "@nestjs/swagger";
 import { AuthGuard } from "src/auth/auth.guard";
 import { UserRole } from "@prisma/client";
 import { Roles } from "src/auth/decorators/roles.decorator";
+import { Response, response } from "express";
 
 @Controller("groups")
 @ApiTags("groups")
-@ApiBearerAuth()
+@ApiBearerAuth("access_token")
 @UseGuards(AuthGuard)
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
   @Post()
   @Roles([UserRole.DATAMANAGER])
-  async create(@Body() createGroupDto: CreateGroupDto) {
+  @ApiCreatedResponse({ description: "Group created", status: 201 })
+  async createGroup(@Body() createGroupDto: CreateGroupDto) {
     return await this.groupsService.create(createGroupDto);
   }
 
   @Get()
-  async findAll() {
+  @ApiOkResponse({ description: "List of all found groups" })
+  async findAllGroups() {
     return await this.groupsService.findAll();
   }
 
   @Get(":id")
-  async findOne(@Param("id") id: string) {
-    return await this.groupsService.findOne(id);
+  @ApiOkResponse({ description: "Group found" })
+  @ApiNotFoundResponse({ description: "Group not found" })
+  async findGroupById(@Param("id") id: string) {
+    const group = await this.groupsService.findOne(id);
+    if (group) return group;
+    else response.status(HttpStatus.NOT_FOUND).send("Group not found!");
   }
 
   @Patch(":id")
-  async update(
+  @Roles([UserRole.DATAMANAGER])
+  @ApiNoContentResponse({ description: "Group updated" })
+  @ApiNotFoundResponse({ description: "Group not found" })
+  async updateGroup(
     @Param("id") id: string,
     @Body() updateGroupDto: UpdateGroupDto,
+    @Res() response: Response,
   ) {
-    return await this.groupsService.update(id, updateGroupDto);
+    const result = await this.groupsService.update(id, updateGroupDto);
+    if (result) {
+      response.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      response.status(HttpStatus.NOT_FOUND).send();
+    }
   }
 
+  @Roles([UserRole.DATAMANAGER])
   @Delete(":id")
-  async remove(@Param("id") id: string) {
-    return await this.groupsService.remove(id);
+  @ApiNoContentResponse({ description: "Group deleted" })
+  async removeGroup(@Param("id") id: string, @Res() response: Response) {
+    const result = await this.groupsService.remove(id);
+    if (result) {
+      response.status(HttpStatus.NO_CONTENT).send();
+    } else response.status(HttpStatus.NOT_FOUND).send();
   }
 }
