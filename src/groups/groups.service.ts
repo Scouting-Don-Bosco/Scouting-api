@@ -11,6 +11,7 @@ export class GroupsService {
     return await this.prisma.group.create({
       data: {
         name: createGroupDto.name,
+        pageContent: createGroupDto.pageContent,
       },
       select: {
         id: true,
@@ -25,6 +26,16 @@ export class GroupsService {
   async findOne(id: string) {
     return await this.prisma.group.findUnique({
       where: { id: id },
+    });
+  }
+
+  async findByName(slug: string) {
+    return await this.prisma.group.findFirst({
+      where: {
+        name: {
+          contains: slug,
+        },
+      },
     });
   }
 
@@ -46,4 +57,3 @@ export class GroupsService {
     });
   }
 }
-

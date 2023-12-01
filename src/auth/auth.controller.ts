@@ -43,7 +43,7 @@ export class AuthController {
       return response;
     }
 
-    const match = this.authService.comparePasswordsForLogin(
+    const match = await this.authService.comparePasswordsForLogin(
       loginArgs.password,
       user.password,
     );
@@ -51,7 +51,8 @@ export class AuthController {
     if (!match) {
       response.status(HttpStatus.UNAUTHORIZED).send({
         statusCode: HttpStatus.UNAUTHORIZED,
-        message: "Incorrect password",
+        message: "Fout wachtwoord",
+        for: "password",
       });
       return;
     }

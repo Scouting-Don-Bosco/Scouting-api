@@ -38,9 +38,10 @@ enum ContactType {
 }
 
 model Group {
-  id      String          @id @default(cuid())
-  name    String          @db.VarChar(50)
-  Members MemberInGroup[]
+  id          String          @id @default(cuid())
+  name        String          @db.VarChar(50)
+  pageContent String          @db.Text()
+  Members     MemberInGroup[]
 }
 
 model MemberInGroup {

@@ -1,4 +1,8 @@
-export class CreateGroupDto {
-  name: string;
-}
+import { ApiProperty } from "@nestjs/swagger";
 
+export class CreateGroupDto {
+  @ApiProperty()
+  name: string;
+  @ApiProperty()
+  pageContent: string;
+}

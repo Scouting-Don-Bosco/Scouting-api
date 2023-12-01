@@ -15,6 +15,7 @@ import { CreateGroupDto } from "./dto/create-group.dto";
 import { UpdateGroupDto } from "./dto/update-group.dto";
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -29,33 +30,62 @@ import { Response, response } from "express";
 @Controller("groups")
 @ApiTags("groups")
 @ApiBearerAuth("access_token")
-@UseGuards(AuthGuard)
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
   @Post()
+  @UseGuards(AuthGuard)
   @Roles([UserRole.DATAMANAGER])
   @ApiCreatedResponse({ description: "Group created", status: 201 })
+  @ApiBody({ type: CreateGroupDto })
   async createGroup(@Body() createGroupDto: CreateGroupDto) {
     return await this.groupsService.create(createGroupDto);
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ description: "List of all found groups" })
   async findAllGroups() {
     return await this.groupsService.findAll();
   }
 
   @Get(":id")
+  @UseGuards(AuthGuard)
   @ApiOkResponse({ description: "Group found" })
   @ApiNotFoundResponse({ description: "Group not found" })
   async findGroupById(@Param("id") id: string) {
     const group = await this.groupsService.findOne(id);
-    if (group) return group;
-    else response.status(HttpStatus.NOT_FOUND).send("Group not found!");
+    if (group) response.send(group);
+    else
+      response.status(HttpStatus.NOT_FOUND).send({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: "Group not found!",
+      });
+  }
+
+  @Get(":slug/info")
+  @ApiOkResponse({ description: "Group info found" })
+  @ApiNotFoundResponse({ description: "Group info not found" })
+  async findGroupInfoById(
+    @Param("slug") slug: string,
+    @Res() response: Response,
+  ) {
+    const group = await this.groupsService.findByName(slug);
+    if (group)
+      response.send({
+        id: group.id,
+        title: group.name,
+        content: group.pageContent,
+      });
+    else
+      response.status(HttpStatus.NOT_FOUND).send({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: "Group not found!",
+      });
   }
 
   @Patch(":id")
+  @UseGuards(AuthGuard)
   @Roles([UserRole.DATAMANAGER])
   @ApiNoContentResponse({ description: "Group updated" })
   @ApiNotFoundResponse({ description: "Group not found" })
@@ -72,6 +102,7 @@ export class GroupsController {
     }
   }
 
+  @UseGuards(AuthGuard)
   @Roles([UserRole.DATAMANAGER])
   @Delete(":id")
   @ApiNoContentResponse({ description: "Group deleted" })
