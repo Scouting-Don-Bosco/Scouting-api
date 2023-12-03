@@ -86,3 +86,27 @@ model NewsArticle {
   authorId    String
   author      User     @relation(fields: [authorId], references: [id])
 }
+
+model AcceptedRoutes {
+  id        String     @id @default(cuid())
+  routePath String
+  roles     UserRole[]
+}
+
+model RolePerms {
+  id    String       @id @default(cuid())
+  role  UserRole
+  perms Permission[]
+}
+
+enum Permission {
+  VIEW_MEMBERS
+  VIEW_GROUPS
+  EDIT_MEMBERS
+  EDIT_GROUPS
+  VIEW_USERS
+  EDIT_USERS
+  EDIT_NEWS
+  CREATE_NEWS
+  DELETE_NEWS
+}

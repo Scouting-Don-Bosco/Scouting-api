@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { User } from "@prisma/client";
+import { Permission, RolePerms, User, UserRole } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 const bcrypt = require("bcrypt");
 
@@ -29,7 +29,86 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password!");
     }
 
-    return user;
+    const { password: string, ...result } = user;
+
+    return result;
+  }
+
+  async isRoutePermitted(token: string, route: string) {
+    const payload = await this.verifyToken(token);
+    if (!payload) {
+      throw new UnauthorizedException("Invalid token!");
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException("Invalid user!");
+    }
+
+    if (
+      user.roles.includes(UserRole.WEBMASTER) ||
+      user.roles.includes(UserRole.BOARDMEMBER)
+    )
+      return true;
+
+    const acceptedRoute =
+      await this.prismaService.acceptedRoutes.findFirstOrThrow({
+        where: { routePath: route },
+      });
+
+    if (!acceptedRoute) {
+      throw new UnauthorizedException("Invalid route!");
+    }
+
+    user.roles.forEach((role) => {
+      if (acceptedRoute.roles.includes(role)) return true;
+    });
+
+    return false;
+  }
+
+  async userHasPerms(token: string, perms: Permission[]) {
+    const payload = await this.verifyToken(token);
+    if (!payload) {
+      throw new UnauthorizedException("Invalid token!");
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException("Invalid user!");
+    }
+
+    if (
+      user.roles.includes(UserRole.WEBMASTER) ||
+      user.roles.includes(UserRole.BOARDMEMBER)
+    )
+      return true;
+
+    const RolePerms = await this.prismaService.rolePerms.findMany({
+      where: { role: { in: user.roles } },
+    });
+
+    const uniquePermsForUser: Permission[] = [];
+
+    RolePerms.forEach((rolePerm) => {
+      rolePerm.perms.forEach((perm) => {
+        if (!uniquePermsForUser.includes(perm)) uniquePermsForUser.push(perm);
+      });
+    });
+
+    if (uniquePermsForUser.length === 0) return false;
+
+    perms.forEach((perm) => {
+      if (uniquePermsForUser.includes(perm)) return true;
+    });
+
+    return false;
   }
 
   async comparePasswordsForLogin(
@@ -62,6 +141,17 @@ export class AuthService {
       }),
       expires_in: 3600,
     };
+  }
+
+  async verifyToken(token: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_ACCESS_SECRET,
+      });
+      return payload;
+    } catch (error) {
+      return null;
+    }
   }
 
   async refreshTokens(refreshToken: string) {

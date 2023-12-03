@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Req,
   Res,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
@@ -18,7 +19,8 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { RefreshTokensDto } from "./dto/refreshtokens.dto";
-import { Response } from "express";
+import { Request, Response } from "express";
+import { Permission } from "@prisma/client";
 
 @ApiTags("auth")
 @Controller("auth")
@@ -60,6 +62,49 @@ export class AuthController {
     response
       .status(HttpStatus.OK)
       .send(await this.authService.generateTokensForUser(user));
+  }
+
+  @Get("/verify")
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: "Token verified" })
+  @ApiUnauthorizedResponse({ description: "Invalid token" })
+  async verifyToken(@Res() response: Response, @Req() request: Request) {
+    const token = request.headers.authorization.split(" ")[1];
+    const verified = await this.authService.verifyToken(token);
+    if (verified) {
+      response.status(HttpStatus.OK).send({
+        success: true,
+      });
+    } else {
+      response.status(HttpStatus.UNAUTHORIZED).send({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+  }
+
+  @Get("/perms")
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: "User has perms" })
+  @ApiUnauthorizedResponse({ description: "Invalid token" })
+  async userHasPerms(
+    @Body() perms: Permission[],
+    @Res() response: Response,
+    @Req() request: Request,
+  ) {
+    const token = request.headers.authorization.split(" ")[1];
+    const hasPerms = this.authService.userHasPerms(token, perms);
+    if (hasPerms) {
+      response.status(HttpStatus.OK).send({
+        statusCode: HttpStatus.OK,
+        message: "User has perms",
+      });
+    } else {
+      response.status(HttpStatus.UNAUTHORIZED).send({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        message: "User does not have perms",
+      });
+    }
   }
 
   @Patch("token/refresh")
