@@ -10,6 +10,7 @@ import { UserRole } from "@prisma/client";
 import { Request } from "express";
 import { Roles } from "./decorators/roles.decorator";
 import { AdminOnly } from "./decorators/admin.decorator";
+import { userHasAdminRoles } from "./admin.roles";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -49,20 +50,12 @@ export class AuthGuard implements CanActivate {
     console.log(userRoles);
 
     if (adminOnly) {
-      if (
-        userRoles.includes(UserRole.WEBMASTER) ||
-        userRoles.includes(UserRole.BOARDMEMBER)
-      ) {
+      if (userHasAdminRoles(userRoles)) {
         return true;
       } else throw new UnauthorizedException("Admin only");
     }
 
-    if (
-      roles &&
-      (userRoles.includes(UserRole.WEBMASTER) ||
-        userRoles.includes(UserRole.BOARDMEMBER))
-    )
-      return true;
+    if (roles && userHasAdminRoles(roles)) return true;
 
     if (roles && roles.some((role) => userRoles.includes(role))) {
       return true;

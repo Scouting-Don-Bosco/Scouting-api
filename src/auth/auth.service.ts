@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Permission, RolePerms, User, UserRole } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
+import { adminRoles, userHasAdminRoles } from "./admin.roles";
 const bcrypt = require("bcrypt");
 
 @Injectable()
@@ -29,12 +34,12 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password!");
     }
 
-    const { password: string, ...result } = user;
+    const tokens = await this.generateTokensForUser(user);
 
-    return result;
+    return tokens;
   }
 
-  async isRoutePermitted(token: string, route: string) {
+  async getUserPerms(token: string) {
     const payload = await this.verifyToken(token);
     if (!payload) {
       throw new UnauthorizedException("Invalid token!");
@@ -47,48 +52,9 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException("Invalid user!");
     }
-
-    if (
-      user.roles.includes(UserRole.WEBMASTER) ||
-      user.roles.includes(UserRole.BOARDMEMBER)
-    )
-      return true;
-
-    const acceptedRoute =
-      await this.prismaService.acceptedRoutes.findFirstOrThrow({
-        where: { routePath: route },
-      });
-
-    if (!acceptedRoute) {
-      throw new UnauthorizedException("Invalid route!");
+    if (userHasAdminRoles(user.roles)) {
+      return Permission.ALL;
     }
-
-    user.roles.forEach((role) => {
-      if (acceptedRoute.roles.includes(role)) return true;
-    });
-
-    return false;
-  }
-
-  async userHasPerms(token: string, perms: Permission[]) {
-    const payload = await this.verifyToken(token);
-    if (!payload) {
-      throw new UnauthorizedException("Invalid token!");
-    }
-
-    const user = await this.prismaService.user.findUnique({
-      where: { id: payload.sub },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException("Invalid user!");
-    }
-
-    if (
-      user.roles.includes(UserRole.WEBMASTER) ||
-      user.roles.includes(UserRole.BOARDMEMBER)
-    )
-      return true;
 
     const RolePerms = await this.prismaService.rolePerms.findMany({
       where: { role: { in: user.roles } },
@@ -102,13 +68,63 @@ export class AuthService {
       });
     });
 
-    if (uniquePermsForUser.length === 0) return false;
+    return uniquePermsForUser;
+  }
 
-    perms.forEach((perm) => {
-      if (uniquePermsForUser.includes(perm)) return true;
+  async getRolePerms(role: UserRole) {
+    const rolePerms = await this.prismaService.rolePerms.findUnique({
+      where: {
+        role: role,
+      },
     });
 
-    return false;
+    console.log(rolePerms);
+
+    if (!rolePerms) {
+      throw new NotFoundException("No role found!");
+    }
+
+    return rolePerms;
+  }
+
+  async getAllRolePerms() {
+    const rolePerms = await this.prismaService.rolePerms.findMany();
+
+    if (!rolePerms) {
+      throw new NotFoundException("Roles not found!");
+    }
+
+    return rolePerms;
+  }
+
+  async addPermissionsToRole(role: UserRole, permissions: Permission[]) {
+    const rolePerms = await this.prismaService.rolePerms.findUnique({
+      where: { role: role },
+    });
+    let newPerms: Permission[] = [];
+    if (rolePerms) {
+      newPerms = [...rolePerms.perms];
+    }
+
+    permissions.forEach((perm) => {
+      if (!newPerms.includes(perm)) newPerms.push(perm);
+    });
+    return await this.prismaService.rolePerms.upsert({
+      where: {
+        role: role,
+      },
+      update: {
+        perms: {
+          set: newPerms,
+        },
+      },
+      create: {
+        role: role,
+        perms: {
+          set: newPerms,
+        },
+      },
+    });
   }
 
   async comparePasswordsForLogin(

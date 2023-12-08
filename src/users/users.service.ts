@@ -15,7 +15,7 @@ export class UsersService {
       data: {
         email: createUserDto.email,
         password: hashedPassword,
-        username: createUserDto.username,
+        name: createUserDto.name,
         roles: createUserDto.roles,
       },
       select: {
@@ -45,13 +45,13 @@ export class UsersService {
       where: { id: id },
       update: {
         email: updateUserDto.email ?? undefined,
-        username: updateUserDto.username ?? undefined,
+        name: updateUserDto.name ?? undefined,
         roles: updateUserDto.roles ?? undefined,
       },
       create: {
         email: updateUserDto.email,
         password: bcrypt.hashSync("changeme", 10),
-        username: updateUserDto.username,
+        name: updateUserDto.name,
         roles: updateUserDto.roles,
       },
     });

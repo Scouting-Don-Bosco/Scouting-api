@@ -36,7 +36,7 @@ export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
   @Post()
-  @Roles(["DATAMANAGER"])
+  @Roles([UserRole.GEGEVENSBEHEERDER])
   @ApiCreatedResponse({ description: "The location of the created member" })
   @ApiBadRequestResponse({ description: "Malformed Request content" })
   @ApiInternalServerErrorResponse({
@@ -74,7 +74,7 @@ export class MembersController {
   }
 
   @Patch(":id")
-  @Roles([UserRole.DATAMANAGER])
+  @Roles([UserRole.GEGEVENSBEHEERDER])
   @ApiNoContentResponse({ description: "Member updated" })
   @ApiNotFoundResponse({ description: "Member not found" })
   async updateMember(

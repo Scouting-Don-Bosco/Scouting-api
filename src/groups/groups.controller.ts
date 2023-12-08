@@ -26,6 +26,7 @@ import { AuthGuard } from "src/auth/auth.guard";
 import { UserRole } from "@prisma/client";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { Response, response } from "express";
+import { adminRoles } from "src/auth/admin.roles";
 
 @Controller("groups")
 @ApiTags("groups")
@@ -35,7 +36,7 @@ export class GroupsController {
 
   @Post()
   @UseGuards(AuthGuard)
-  @Roles([UserRole.DATAMANAGER])
+  @Roles([UserRole.GEGEVENSBEHEERDER])
   @ApiCreatedResponse({ description: "Group created", status: 201 })
   @ApiBody({ type: CreateGroupDto })
   async createGroup(@Body() createGroupDto: CreateGroupDto) {
@@ -86,7 +87,7 @@ export class GroupsController {
 
   @Patch(":id")
   @UseGuards(AuthGuard)
-  @Roles([UserRole.DATAMANAGER])
+  @Roles([UserRole.GEGEVENSBEHEERDER])
   @ApiNoContentResponse({ description: "Group updated" })
   @ApiNotFoundResponse({ description: "Group not found" })
   async updateGroup(
@@ -103,7 +104,7 @@ export class GroupsController {
   }
 
   @UseGuards(AuthGuard)
-  @Roles([UserRole.DATAMANAGER])
+  @Roles([UserRole.GEGEVENSBEHEERDER])
   @Delete(":id")
   @ApiNoContentResponse({ description: "Group deleted" })
   async removeGroup(@Param("id") id: string, @Res() response: Response) {

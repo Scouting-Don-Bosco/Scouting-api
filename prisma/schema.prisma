@@ -64,18 +64,22 @@ model User {
   id           String        @id @default(cuid())
   email        String        @unique
   password     String
-  username     String
-  roles        UserRole[]    @default([USER])
+  name         String
+  roles        UserRole[]    @default([STAFLID])
   newsArticles NewsArticle[]
 }
 
 enum UserRole {
-  USER
-  BOARDMEMBER
   WEBMASTER
-  LEADER
-  SOCIALMANAGER
-  DATAMANAGER
+  GEGEVENSBEHEERDER
+  SOCIALMEDIA
+  VOORZITTER
+  SECRETARIS
+  PENNINGMEESTER
+  GROEPSBEGELEIDER
+  PRAKTIJKBEGELEIDER
+  STAFLID
+  TEAMLEIDER
 }
 
 model NewsArticle {
@@ -94,12 +98,12 @@ model AcceptedRoutes {
 }
 
 model RolePerms {
-  id    String       @id @default(cuid())
-  role  UserRole
+  role  UserRole     @unique
   perms Permission[]
 }
 
 enum Permission {
+  ALL
   VIEW_MEMBERS
   VIEW_GROUPS
   EDIT_MEMBERS

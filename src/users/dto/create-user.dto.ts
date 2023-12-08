@@ -7,7 +7,7 @@ export class CreateUserDto {
   @ApiProperty()
   password: string;
   @ApiProperty()
-  username: string;
+  name: string;
   @ApiProperty()
   roles: UserRole[];
 }
